@@ -71,8 +71,8 @@ const CoinsView = () => {
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-5">
-        <div className="xl:col-span-3 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-          <div className="flex items-center justify-between">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl sm:p-6 xl:col-span-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-semibold text-white">Mukofotlar do'koni</h2>
             <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/60">
               {rewards.length} ta variant
@@ -84,12 +84,12 @@ const CoinsView = () => {
                 key={reward.id}
                 className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-white/70"
               >
-                <div className="flex items-center justify-between text-white">
+                <div className="flex flex-wrap items-center justify-between gap-3 text-white">
                   <div className="text-base font-semibold">{reward.title}</div>
                   <div className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/60">{reward.cost} coin</div>
                 </div>
                 <p className="text-xs text-white/50">{reward.description}</p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => {
                       void redeemReward(reward.title, reward.cost);
@@ -114,8 +114,8 @@ const CoinsView = () => {
           </div>
         </div>
 
-        <div className="xl:col-span-2 space-y-4">
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+        <div className="space-y-4 xl:col-span-2">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl sm:p-6">
             <h3 className="text-lg font-semibold text-white">Do'konga mukofot qo'shish</h3>
             <p className="mt-1 text-xs text-white/50">Mukofotni nomlang va coin narxini belgilang. U zudlik bilan ro'yxatga qo'shiladi.</p>
             <form onSubmit={handleAddReward} className="mt-4 space-y-3 text-sm text-white/60">
@@ -158,7 +158,7 @@ const CoinsView = () => {
             {message && <div className="mt-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-xs text-white/60">{message}</div>}
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl sm:p-6">
             <h3 className="text-lg font-semibold text-white">Oxirgi 12 harakat</h3>
             <div className="mt-4 space-y-3 text-sm text-white/60">
               {latestLedger.length === 0 && <div className="text-xs text-white/40">Hali tranzaksiyalar yo'q.</div>}
@@ -199,7 +199,7 @@ const LedgerItem = ({ entry }: { entry: CoinLedgerEntry }) => {
   const amount = entry.amount;
   const positive = amount >= 0;
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/30 px-4 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/5 bg-black/30 px-4 py-3">
       <div>
         <div className="text-sm text-white/80">{entry.label}</div>
         <div className="text-xs text-white/40">

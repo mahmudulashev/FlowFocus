@@ -6,7 +6,9 @@ import {
   LayoutDashboard,
   Settings2,
   Sparkles,
-  AppWindow
+  AppWindow,
+  Menu,
+  X
 } from "lucide-react";
 import { useHydratedFocusStore, useFocusStore } from "@/state/useFocusStore";
 import DashboardView from "@/features/dashboard/DashboardView";
@@ -37,6 +39,7 @@ const AppShell = () => {
   const notificationsEnabled = useFocusStore(state => state.notificationsEnabled);
   const pendingLogs = useFocusStore(state => state.dailyLogs[getTodayKey()]);
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]["id"]>(inferTabFromHash);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const hasWidgetSupport =
     typeof window !== "undefined" && Boolean(window.focusFlowAPI?.toggleWidget);
 
@@ -51,7 +54,12 @@ const AppShell = () => {
   const handleTabChange = (tabId: (typeof tabs)[number]["id"]) => {
     setActiveTab(tabId);
     window.location.hash = `#/${tabId}`;
+    setSidebarOpen(false);
   };
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [activeTab]);
 
   const editsLeft = useMemo(() => Math.max(0, 3 - (weekMeta?.editsUsed ?? 0)), [weekMeta]);
   const isEvening = useMemo(() => {
@@ -60,22 +68,42 @@ const AppShell = () => {
   }, [pendingLogs?.updatedAt]);
 
   return (
-    <div className="relative flex h-screen overflow-hidden bg-[#05050a] text-white">
+    <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#05050a] text-white lg:h-screen lg:flex-row">
       <div className="pointer-events-none absolute inset-0 blur-3xl" aria-hidden>
         <div className="absolute left-[-10%] top-[-20%] h-96 w-96 rounded-full bg-primary-500/20" />
         <div className="absolute right-[-15%] top-1/4 h-[420px] w-[420px] rounded-full bg-[#ff6b6b]/20" />
         <div className="absolute bottom-[-30%] left-1/2 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#22d3ee]/10" />
       </div>
 
-      <aside className="relative z-10 flex w-72 flex-col border-r border-white/10 bg-surface/80 backdrop-blur-xl">
-        <div className="flex items-center gap-3 px-6 py-8">
-          <div className="rounded-2xl bg-white/10 p-1 shadow-glow ring-1 ring-white/5">
-            <LogoMark size={48} />
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 transform flex-col border-r border-white/10 bg-surface/95 backdrop-blur-xl transition-transform duration-300 ease-in-out lg:relative lg:z-10 lg:w-72 lg:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
+        <div className="flex items-center justify-between gap-3 px-6 py-8">
+          <div className="flex items-center gap-3">
+            <div className="rounded-2xl bg-white/10 p-1 shadow-glow ring-1 ring-white/5">
+              <LogoMark size={48} />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold tracking-wide">Focus Flow</h1>
+              <p className="text-xs text-white/60">Ultra fokus haftalik ritual</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-semibold tracking-wide">Focus Flow</h1>
-            <p className="text-xs text-white/60">Ultra fokus haftalik ritual</p>
-          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="rounded-2xl border border-white/10 bg-white/5 p-2 text-white transition hover:bg-white/10 lg:hidden"
+            aria-label="Menuni yopish"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         <nav className="flex flex-1 flex-col gap-2 px-4">
@@ -141,8 +169,11 @@ const AppShell = () => {
             }
           }}
           hasWidgetSupport={hasWidgetSupport}
+          onToggleMenu={() => {
+            setSidebarOpen(prev => !prev);
+          }}
         />
-        <section className="flex-1 overflow-y-auto px-8 pb-10 pt-6 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+        <section className="flex-1 overflow-y-auto px-4 pb-10 pt-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 sm:px-6 lg:px-8 lg:pt-6">
           {activeTab === "dashboard" && <DashboardView onOpenPlanner={() => handleTabChange("planner")} />}
           {activeTab === "planner" && <PlannerView editsLeft={editsLeft} />}
           {activeTab === "habits" && <HabitsView isEvening={isEvening} />}
@@ -156,10 +187,12 @@ const AppShell = () => {
 
 const HeaderSection = ({
   onOpenWidget,
-  hasWidgetSupport
+  hasWidgetSupport,
+  onToggleMenu
 }: {
   onOpenWidget: () => void;
   hasWidgetSupport: boolean;
+  onToggleMenu: () => void;
 }) => {
   const [clock, setClock] = useState(() => new Date());
   const weekMeta = useFocusStore(state => state.weekMeta);
@@ -180,20 +213,33 @@ const HeaderSection = ({
   );
 
   return (
-    <header className="flex items-center justify-between border-b border-white/10 px-8 py-5 backdrop-blur-xl">
-      <div>
-        <div className="text-sm uppercase tracking-[0.4em] text-white/40">Current Focus</div>
-        <div className="flex items-baseline gap-6">
-          <div className="text-4xl font-semibold leading-tight">
-            {clock.toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}
+    <header className="flex flex-col gap-4 border-b border-white/10 px-4 py-4 backdrop-blur-xl sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:py-5">
+      <div className="flex w-full items-start justify-between gap-4 lg:items-center">
+        <div className="flex items-start gap-3 lg:items-center">
+          <button
+            onClick={onToggleMenu}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white transition hover:bg-white/20 lg:hidden"
+            aria-label="Menuni ochish"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div>
+            <div className="text-xs font-medium uppercase tracking-[0.4em] text-white/40 sm:text-sm">
+              Current Focus
+            </div>
+            <div className="mt-2 flex flex-col gap-1 text-white/70 sm:flex-row sm:items-baseline sm:gap-4">
+              <div className="text-3xl font-semibold leading-tight sm:text-4xl">
+                {clock.toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}
+              </div>
+              <div className="text-sm text-white/60 sm:text-base">{dayFormatter.format(clock)}</div>
+            </div>
           </div>
-          <div className="text-white/60">{dayFormatter.format(clock)}</div>
         </div>
       </div>
-      <div className="flex items-center gap-4">
-        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-right">
+      <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-right text-sm">
           <div className="text-xs text-white/50">Haftalik tahrir limiti</div>
-          <div className="text-sm font-semibold text-white">
+          <div className="text-base font-semibold text-white">
             {Math.max(0, 3 - (weekMeta?.editsUsed ?? 0))} / 3 qoldi
           </div>
         </div>

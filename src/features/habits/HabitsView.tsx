@@ -81,7 +81,7 @@ const HabitsView = ({ isEvening }: HabitsViewProps) => {
         />
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+      <section className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold text-white">Kunlik ritual</h2>
@@ -141,13 +141,13 @@ const HabitsView = ({ isEvening }: HabitsViewProps) => {
           </form>
         )}
 
-        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {habits.map(habit => (
             <div
               key={habit.id}
               className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-black/30 p-5 text-sm text-white/70"
             >
-              <div className="flex items-center justify-between text-white">
+              <div className="flex flex-wrap items-center justify-between gap-3 text-white">
                 <div>
                   <div className="text-base font-semibold">{habit.title}</div>
                   <p className="text-xs text-white/50">Mukofot: +{habit.rewardPerCheck} coin</p>
@@ -163,7 +163,7 @@ const HabitsView = ({ isEvening }: HabitsViewProps) => {
                 </span>
                 <span>Rekord: {habit.bestStreak}</span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => {
                     void markToday(habit);

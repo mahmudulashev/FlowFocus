@@ -180,7 +180,7 @@ const PlannerView = ({ editsLeft }: PlannerViewProps) => {
         </div>
       </header>
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
         {weekdays.map(day => {
           const tasks = tasksByDay.get(day.value) ?? [];
           return (
@@ -231,8 +231,8 @@ const PlannerView = ({ editsLeft }: PlannerViewProps) => {
       </section>
 
       {editorOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4 backdrop-blur-md">
-          <div className="w-full max-w-2xl rounded-3xl border border-white/10 bg-[#12121d] p-8 shadow-2xl">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-md">
+          <div className="w-full max-w-2xl rounded-3xl border border-white/10 bg-[#12121d] p-6 shadow-2xl sm:p-8">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-white">
                 {editorState.id ? "Blokni tahrirlash" : "Yangi blok"}

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { format, isSameDay } from "date-fns";
 import { useFocusStore } from "@/state/useFocusStore";
-import type { TaskStatus } from "@/state/types";
+import type { CoinLedgerEntry, TaskStatus } from "@/state/types";
 import { getTodayKey } from "@/utils/date";
 
 const jsDayToIso = (day: number) => (day + 6) % 7;
@@ -80,6 +80,161 @@ const statusPalette: Record<TaskStatus, { border: string; chip: string; text: st
   }
 };
 
+const coachModes = [
+  {
+    id: "momentum",
+    label: "Momentum boost",
+    description: "Progressni tezlatish va keyingi blokni kuchli boshlash.",
+    tone: "text-primary-200"
+  },
+  {
+    id: "balance",
+    label: "Balans",
+    description: "Energiya va dam olishni nazorat qilib, ritmni ushlang.",
+    tone: "text-emerald-200"
+  },
+  {
+    id: "reset",
+    label: "Reset",
+    description: "Reja chippakka ketsa, yangi start uchun maydon tozalang.",
+    tone: "text-amber-200"
+  }
+] as const;
+
+type CoachMode = (typeof coachModes)[number]["id"];
+
+interface CoachReport {
+  headline: string;
+  summary: string;
+  actions: string[];
+}
+
+interface TodaySnapshot {
+  tasks: TodayTaskView[];
+  nextTask?: TodayTaskView;
+  progress: number;
+  skipped: number;
+  overdue: number;
+  completed: number;
+  total: number;
+}
+
+const buildLocalCoachReport = ({
+  mode,
+  today,
+  ledger,
+  coinBank
+}: {
+  mode: CoachMode;
+  today: TodaySnapshot;
+  ledger: CoinLedgerEntry[];
+  coinBank: number;
+}): CoachReport => {
+  const completion = Math.round(today.progress * 100);
+  const netCoins = ledger.reduce((sum, entry) => sum + entry.amount, 0);
+  const summaryParts: string[] = [];
+
+  if (today.total === 0) {
+    summaryParts.push(
+      "Bugungi jadval hali bo'sh. Haftalik maqsadlaringizni eslab, kamida ikkita asosiy blok qo'shish vaqti."
+    );
+  } else {
+    summaryParts.push(
+      `Bugun ${today.total} ta blokdan ${today.completed} tasi bajarildi (${completion}% bajarilish).`
+    );
+  }
+
+  if (today.overdue > 0) {
+    summaryParts.push(
+      `${today.overdue} ta vazifa hozircha kechikmoqda — eng muhimini tanlab, 15 daqiqalik fokus slot bilan yopib qo'ying.`
+    );
+  }
+
+  if (today.skipped > 0) {
+    summaryParts.push(
+      `${today.skipped} ta blok o'tkazib yuborildi. Nima sabab bo'lganini yozib chiqing va ertangi jadvalda himoya strategiyasini belgilang.`
+    );
+  }
+
+  if (netCoins !== 0) {
+    const coinTrend = netCoins > 0 ? `+${netCoins}` : `${netCoins}`;
+    summaryParts.push(
+      `Coin harakati: ${coinTrend}. Joriy balans ${coinBank} coin — mukofot rejangizni yangilashni unutmang.`
+    );
+  }
+
+  let headline = "";
+  const actions: string[] = [];
+  const nextTaskLabel = today.nextTask
+    ? `${today.nextTask.title} (${format(today.nextTask.start, "HH:mm")})`
+    : null;
+
+  switch (mode) {
+    case "momentum": {
+      headline =
+        completion >= 80
+          ? "Momentumni ushlab turing!"
+          : completion >= 50
+          ? "Momentumni kuchaytirish vaqti"
+          : "Bugun start uchun signal bering";
+      if (nextTaskLabel) {
+        actions.push(`Keyingi blok: ${nextTaskLabel}. 5 daqiqa tayyorgarlik rituali bilan boshlang.`);
+      }
+      if (today.overdue > 0) {
+        actions.push(`Kechikayotgan vazifalardan bittasini tanlab, 15 daqidali mini-sprint bilan yeching.`);
+      }
+      actions.push("Fokusni himoyalash uchun telefoni flight modega, brauzer oynalarini esa yopiq holda qoldiring.");
+      break;
+    }
+    case "balance": {
+      headline =
+        completion >= 70
+          ? "Balans mukammal"
+          : completion >= 40
+          ? "Balansni tekislang"
+          : "Energiya va reja o'rtasida balans qidiring";
+      actions.push("3 daqiqa chuqur nafas mashqi yoki qisqa yurish bilan energiyani yangilang.");
+      if (today.completed < today.total && today.total > 0) {
+        actions.push("Eng yengil blokni tanlab, 'quick win' sifatida yakunlab qo'ying.");
+      }
+      actions.push("Kun yakunida ikki jumlalik refleksiya yozib, o'rganilgan darslarni qayd eting.");
+      break;
+    }
+    case "reset": {
+      headline = "Reset va qayta fokusing";
+      if (today.total === 0) {
+        actions.push("Bugungi kun uchun 2-3 ta 'must-do' blok kiriting va vaqtni belgilang.");
+      }
+      if (today.skipped > 0) {
+        actions.push("O'tkazilgan vazifalardan bittasini ertangi jadvalga qayta joylashtiring.");
+      }
+      actions.push("Joriy ustuvorliklarni yozib chiqing va kalendarni yangilab oling.");
+      if (!nextTaskLabel) {
+        actions.push("Bugun uchun kichik g'alaba blokini tanlab, kech soatlarda ham bajarishga harakat qiling.");
+      }
+      break;
+    }
+  }
+
+  if (netCoins < 0) {
+    actions.push("Penaltilarni qoplash uchun ertaga bir 'boss' yoki 'deep work' blokini oldindan tayyorlang.");
+  } else if (netCoins > 0) {
+    actions.push("Mukofot do'konidan kichik sovrin tanlab, g'alabani mustahkamlab qo'ying.");
+  }
+
+  if (today.total > 0 && today.completed === today.total) {
+    actions.push("Bugungi g'alabalarni yozib, ertangi kun uchun ustuvorlikni aniqlab qo'ying.");
+  }
+
+  const uniqueActions = Array.from(new Set(actions.filter(Boolean))).slice(0, 4);
+
+  return {
+    headline: headline || "Bugungi coach sharhi",
+    summary: summaryParts.join(" "),
+    actions: uniqueActions.length > 0 ? uniqueActions : ["Bugungi progress asosida qisqa refleksiya yozib qo'ying."]
+  };
+};
+
 const DashboardView = ({ onOpenPlanner }: DashboardViewProps) => {
   const weeklyPlan = useFocusStore(state => state.weeklyPlan);
   const dailyLogs = useFocusStore(state => state.dailyLogs);
@@ -91,10 +246,8 @@ const DashboardView = ({ onOpenPlanner }: DashboardViewProps) => {
   const markTaskStatus = useFocusStore(state => state.markTaskStatus);
 
   const todayKey = getTodayKey();
-  const [aiSummary, setAiSummary] = useState<string>("");
   const [noteInput, setNoteInput] = useState("");
-  const hasSummarySupport =
-    typeof window !== "undefined" && Boolean(window.focusFlowAPI?.generateSummary);
+  const [coachMode, setCoachMode] = useState<CoachMode>("momentum");
 
   const todayData = useMemo(() => {
     const now = new Date();
@@ -145,31 +298,17 @@ const DashboardView = ({ onOpenPlanner }: DashboardViewProps) => {
     };
   }, [weeklyPlan, dailyLogs, todayKey]);
 
-  useEffect(() => {
-    let mounted = true;
-    if (hasSummarySupport) {
-      (async () => {
-        const summary = await window.focusFlowAPI?.generateSummary?.();
-        if (summary && mounted) {
-          setAiSummary(summary.report);
-        }
-      })();
-    }
-    return () => {
-      mounted = false;
-    };
-  }, [dailyLogs, coinLedger, todayKey, hasSummarySupport]);
-
-  const todayLedger = useMemo(() => {
+  const todayLedgerFull = useMemo(() => {
     const today = new Date();
     return coinLedger
       .filter(entry => {
         if (!entry.date) return false;
         const entryDate = new Date(entry.date);
         return isSameDay(entryDate, today);
-      })
-      .slice(0, 6);
+      });
   }, [coinLedger, todayKey]);
+
+  const todayLedger = useMemo(() => todayLedgerFull.slice(0, 6), [todayLedgerFull]);
 
   const coachMessage = useMemo(
     () =>
@@ -182,6 +321,22 @@ const DashboardView = ({ onOpenPlanner }: DashboardViewProps) => {
     [todayData]
   );
 
+  const coachReport = useMemo(
+    () =>
+      buildLocalCoachReport({
+        mode: coachMode,
+        today: todayData,
+        ledger: todayLedgerFull,
+        coinBank
+      }),
+    [coachMode, todayData, todayLedgerFull, coinBank]
+  );
+
+  const activeMode = useMemo(
+    () => coachModes.find(mode => mode.id === coachMode),
+    [coachMode]
+  );
+
   const handleAction = async (taskId: string, status: TaskStatus) => {
     await markTaskStatus(todayKey, { taskId, status });
   };
@@ -191,6 +346,18 @@ const DashboardView = ({ onOpenPlanner }: DashboardViewProps) => {
     if (!noteInput.trim()) return;
     await addQuickNote(noteInput.trim());
     setNoteInput("");
+  };
+
+  const handleSaveSummary = () => {
+    const text =
+      coachReport.summary.length > 200
+        ? `${coachReport.summary.slice(0, 197)}…`
+        : coachReport.summary;
+    void addQuickNote(`Coach: ${text}`);
+  };
+
+  const handleCaptureAction = (action: string) => {
+    void addQuickNote(`Coach: ${action}`);
   };
 
   return (
@@ -272,25 +439,55 @@ const DashboardView = ({ onOpenPlanner }: DashboardViewProps) => {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="text-xs uppercase tracking-[0.2em] text-white/50">AI tahlil</div>
-                <p className="mt-3 whitespace-pre-line text-sm text-white/70">
-                  {hasSummarySupport
-                    ? aiSummary || "Kun yakunida AI coach tahlil qiladi."
-                    : "AI coach faqat desktop ilovada mavjud. Brauzer versiyasida qo'lda tahlil kiriting."}
-                </p>
+                <h4 className={`mt-2 text-lg font-semibold text-white ${activeMode?.tone ?? ""}`}>
+                  {coachReport.headline}
+                </h4>
+                <p className="mt-3 whitespace-pre-line text-sm text-white/70">{coachReport.summary}</p>
               </div>
-              {hasSummarySupport && (
-                <button
-                  onClick={() => {
-                    void (async () => {
-                      const summary = await window.focusFlowAPI?.generateSummary?.();
-                      if (summary) setAiSummary(summary.report);
-                    })();
-                  }}
-                  className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/60 transition hover:bg-white/10"
+              <button
+                onClick={handleSaveSummary}
+                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/60 transition hover:bg-white/10"
+              >
+                Coach yozuvini saqlash
+              </button>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {coachModes.map(mode => {
+                const active = mode.id === coachMode;
+                return (
+                  <button
+                    key={mode.id}
+                    onClick={() => setCoachMode(mode.id)}
+                    className={clsx(
+                      "rounded-full border px-4 py-2 text-xs font-semibold transition",
+                      active
+                        ? "border-primary-400 bg-primary-500/20 text-primary-100"
+                        : "border-white/10 bg-black/20 text-white/60 hover:bg-white/10"
+                    )}
+                  >
+                    {mode.label}
+                  </button>
+                );
+              })}
+            </div>
+            {activeMode?.description && (
+              <p className="mt-2 text-xs text-white/40">{activeMode.description}</p>
+            )}
+            <div className="mt-4 space-y-2">
+              {coachReport.actions.map(action => (
+                <div
+                  key={action}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white/70"
                 >
-                  Yangilash
-                </button>
-              )}
+                  <span>{action}</span>
+                  <button
+                    onClick={() => handleCaptureAction(action)}
+                    className="text-xs font-semibold text-primary-200 transition hover:text-primary-100"
+                  >
+                    Quick notesga qo'shish
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         </div>

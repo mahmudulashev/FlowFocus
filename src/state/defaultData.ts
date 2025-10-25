@@ -160,6 +160,7 @@ export const createDefaultState = (): FocusData => {
     priorities: [],
     notificationsEnabled: false,
     widgetPinned: false,
+    theme: "ocean",
     lastHydratedAt: now
   };
 };

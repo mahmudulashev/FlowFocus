@@ -4,15 +4,100 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+  --color-background: 5 5 10;
+  --color-foreground: 249 250 252;
+  --color-muted: 173 186 216;
+  --color-primary-50: 242 247 255;
+  --color-primary-100: 219 232 255;
+  --color-primary-200: 183 208 255;
+  --color-primary-300: 138 172 255;
+  --color-primary-400: 92 134 255;
+  --color-primary-500: 53 102 255;
+  --color-primary-600: 31 77 240;
+  --color-primary-700: 20 57 200;
+  --color-primary-800: 18 47 156;
+  --color-primary-900: 17 42 122;
+  --color-surface-900: 18 18 26;
+  --color-surface-800: 25 25 39;
+  --color-surface-700: 31 32 51;
+  --color-accent: 255 207 84;
+  --color-success: 74 222 128;
+  --color-warning: 249 115 22;
+  --color-danger: 244 63 94;
+}
+
+[data-theme="sunset"] {
+  --color-background: 18 10 24;
+  --color-foreground: 255 240 233;
+  --color-muted: 245 204 187;
+  --color-primary-50: 255 245 242;
+  --color-primary-100: 255 228 219;
+  --color-primary-200: 255 204 183;
+  --color-primary-300: 255 171 138;
+  --color-primary-400: 255 139 92;
+  --color-primary-500: 255 107 60;
+  --color-primary-600: 240 79 42;
+  --color-primary-700: 196 58 34;
+  --color-primary-800: 150 44 29;
+  --color-primary-900: 111 34 25;
+  --color-surface-900: 32 18 36;
+  --color-surface-800: 44 22 40;
+  --color-surface-700: 56 26 44;
+  --color-accent: 255 190 110;
+}
+
+[data-theme="aurora"] {
+  --color-background: 6 14 18;
+  --color-foreground: 236 249 255;
+  --color-muted: 184 215 226;
+  --color-primary-50: 242 251 255;
+  --color-primary-100: 212 241 255;
+  --color-primary-200: 174 231 255;
+  --color-primary-300: 127 213 255;
+  --color-primary-400: 85 191 255;
+  --color-primary-500: 58 162 255;
+  --color-primary-600: 47 129 255;
+  --color-primary-700: 42 102 229;
+  --color-primary-800: 35 77 181;
+  --color-primary-900: 29 58 143;
+  --color-surface-900: 12 22 28;
+  --color-surface-800: 16 29 35;
+  --color-surface-700: 20 36 44;
+  --color-accent: 192 132 252;
+}
+
+[data-theme="midnight"] {
+  --color-background: 6 6 14;
+  --color-foreground: 230 233 255;
+  --color-muted: 178 184 214;
+  --color-primary-50: 245 243 255;
+  --color-primary-100: 231 228 255;
+  --color-primary-200: 207 201 255;
+  --color-primary-300: 165 154 255;
+  --color-primary-400: 125 109 255;
+  --color-primary-500: 92 75 255;
+  --color-primary-600: 71 56 229;
+  --color-primary-700: 55 43 184;
+  --color-primary-800: 41 31 138;
+  --color-primary-900: 31 24 97;
+  --color-surface-900: 14 14 28;
+  --color-surface-800: 20 20 40;
+  --color-surface-700: 30 28 48;
+  --color-accent: 130 173 255;
+}
+
 html,
 body,
 #root {
   margin: 0;
   padding: 0;
   height: 100%;
-  background-color: #0b0b12;
+  background-color: rgb(var(--color-background));
   font-family: "Inter", system-ui, sans-serif;
-  color: #f9fafc;
+  color: rgb(var(--color-foreground));
+  transition: background-color 300ms ease, color 300ms ease;
 }
 
 ::-webkit-scrollbar {

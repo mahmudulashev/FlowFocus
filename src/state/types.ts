@@ -2,6 +2,8 @@ export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export type TaskDifficulty = "light" | "moderate" | "deep" | "boss";
 
+export type ThemeId = "ocean" | "sunset" | "aurora" | "midnight";
+
 export interface FocusTask {
   id: string;
   title: string;
@@ -108,6 +110,7 @@ export interface FocusData {
   notificationsEnabled: boolean;
   widgetPinned: boolean;
   lastHydratedAt?: string;
+  theme: ThemeId;
 }
 
 export interface FocusState extends FocusData {
@@ -129,7 +132,8 @@ export interface FocusState extends FocusData {
   deleteReward: (rewardId: string) => Promise<void>;
   deleteHabit: (habitId: string) => Promise<void>;
   toggleNotification: (value: boolean) => Promise<{ success: boolean; reason?: string }>;
-  toggleWidgetPinned: (value: boolean) => void;
+  toggleWidgetPinned: (value: boolean) => Promise<void>;
   addQuickNote: (note: string) => Promise<void>;
   removeQuickNote: (note: string) => Promise<void>;
+  setTheme: (theme: ThemeId) => Promise<void>;
 }

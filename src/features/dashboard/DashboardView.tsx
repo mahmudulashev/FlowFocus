@@ -119,6 +119,21 @@ interface TodaySnapshot {
   total: number;
 }
 
+type FocusFlowSummaryPayload = {
+  report: string;
+  stats: {
+    completed: number;
+    pending: number;
+    skipped: number;
+    earned: number;
+    spent: number;
+    habitsChecked?: number;
+    progress?: number;
+  } | null;
+};
+
+const summaryHeadingIcons = new Set(["📈", "✅", "🎯", "🎉", "🔥", "📝", "⚡️", "🚀", "🌙", "💡", "📌"]);
+
 const buildLocalCoachReport = ({
   mode,
   today,
@@ -248,6 +263,11 @@ const DashboardView = ({ onOpenPlanner }: DashboardViewProps) => {
   const todayKey = getTodayKey();
   const [noteInput, setNoteInput] = useState("");
   const [coachMode, setCoachMode] = useState<CoachMode>("momentum");
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiStats, setAiStats] = useState<FocusFlowSummaryPayload["stats"]>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
 
   const todayData = useMemo(() => {
     const now = new Date();
@@ -308,6 +328,48 @@ const DashboardView = ({ onOpenPlanner }: DashboardViewProps) => {
       });
   }, [coinLedger, todayKey]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.focusFlowAPI?.generateSummary) {
+      setAiSummary(null);
+      setAiStats(null);
+      setAiError(null);
+      setAiLoading(false);
+      return;
+    }
+    let cancelled = false;
+    const run = async () => {
+      setAiLoading(true);
+      try {
+        const payload = (await window.focusFlowAPI.generateSummary()) as FocusFlowSummaryPayload;
+        if (cancelled) return;
+        setAiSummary(payload?.report ?? null);
+        setAiStats(payload?.stats ?? null);
+        setAiError(null);
+      } catch (error) {
+        console.error("[FocusFlow] AI summary error", error);
+        if (!cancelled) {
+          setAiSummary(null);
+          setAiStats(null);
+          setAiError("AI xulosiga ulanib bo'lmadi.");
+        }
+      } finally {
+        if (!cancelled) {
+          setAiLoading(false);
+        }
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [todayData.completed, todayData.skipped, todayData.overdue, todayData.total, todayLedgerFull.length]);
+
+  useEffect(() => {
+    if (!aiFeedback || typeof window === "undefined") return;
+    const timer = window.setTimeout(() => setAiFeedback(null), 2400);
+    return () => window.clearTimeout(timer);
+  }, [aiFeedback]);
+
   const todayLedger = useMemo(() => todayLedgerFull.slice(0, 6), [todayLedgerFull]);
 
   const coachMessage = useMemo(
@@ -337,6 +399,33 @@ const DashboardView = ({ onOpenPlanner }: DashboardViewProps) => {
     [coachMode]
   );
 
+  const summaryLines = useMemo(() => {
+    if (!aiSummary) return [];
+    return aiSummary
+      .split("\n")
+      .map(line => line.trim())
+      .filter(Boolean)
+      .map((line, index) => {
+        const isBullet = line.startsWith("•");
+        const clean = isBullet ? line.replace(/^•\s*/, "") : line;
+        const lead = clean.charAt(0);
+        const isHeading = !isBullet && summaryHeadingIcons.has(lead);
+        return {
+          id: `${index}-${clean.slice(0, 12)}`,
+          text: clean,
+          isHeading,
+          isBullet: !isHeading && (isBullet || clean.startsWith("-"))
+        };
+      });
+  }, [aiSummary]);
+
+  const aiCoinDelta = useMemo(() => {
+    if (!aiStats) return 0;
+    const earned = typeof aiStats.earned === "number" ? aiStats.earned : 0;
+    const spent = typeof aiStats.spent === "number" ? aiStats.spent : 0;
+    return earned - spent;
+  }, [aiStats]);
+
   const handleAction = async (taskId: string, status: TaskStatus) => {
     await markTaskStatus(todayKey, { taskId, status });
   };
@@ -349,11 +438,34 @@ const DashboardView = ({ onOpenPlanner }: DashboardViewProps) => {
   };
 
   const handleSaveSummary = () => {
-    const text =
-      coachReport.summary.length > 200
-        ? `${coachReport.summary.slice(0, 197)}…`
-        : coachReport.summary;
+    const raw = (aiSummary ?? coachReport.summary).replace(/\n{2,}/g, "\n").trim();
+    if (!raw) return;
+    const text = raw.length > 280 ? `${raw.slice(0, 277)}…` : raw;
     void addQuickNote(`Coach: ${text}`);
+    setAiFeedback("Coach sharhi Quick notesga qo'shildi.");
+  };
+
+  const handleCopySummary = async () => {
+    const raw = (aiSummary ?? coachReport.summary).replace(/\n{2,}/g, "\n").trim();
+    if (!raw) return;
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(raw);
+      } else if (typeof document !== "undefined") {
+        const textarea = document.createElement("textarea");
+        textarea.value = raw;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      setAiFeedback("AI sharhi clipboardga nusxalandi.");
+    } catch (error) {
+      console.error("[FocusFlow] copy summary error", error);
+      setAiFeedback("AI sharhini nusxalab bo'lmadi.");
+    }
   };
 
   const handleCaptureAction = (action: string) => {
@@ -438,18 +550,93 @@ const DashboardView = ({ onOpenPlanner }: DashboardViewProps) => {
           <div className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <div className="text-xs uppercase tracking-[0.2em] text-white/50">AI tahlil</div>
-                <h4 className={`mt-2 text-lg font-semibold text-white ${activeMode?.tone ?? ""}`}>
+                <div className="text-xs uppercase tracking-[0.2em] text-foreground/60">AI tahlil</div>
+                <h4 className={`mt-2 text-lg font-semibold text-foreground ${activeMode?.tone ?? ""}`}>
                   {coachReport.headline}
                 </h4>
-                <p className="mt-3 whitespace-pre-line text-sm text-white/70">{coachReport.summary}</p>
+                <p className="mt-3 whitespace-pre-line text-sm text-foreground/70">{coachReport.summary}</p>
               </div>
-              <button
-                onClick={handleSaveSummary}
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/60 transition hover:bg-white/10"
-              >
-                Coach yozuvini saqlash
-              </button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  onClick={handleSaveSummary}
+                  className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-foreground/70 transition hover:bg-white/10 hover:text-foreground"
+                >
+                  Quick notesga saqlash
+                </button>
+                <button
+                  onClick={handleCopySummary}
+                  className="rounded-full border border-primary-500/40 bg-primary-500/10 px-4 py-2 text-xs font-semibold text-primary-100 transition hover:bg-primary-500/20"
+                >
+                  AI sharhini nusxalash
+                </button>
+              </div>
+            </div>
+            {aiFeedback && (
+              <div className="mt-3 rounded-2xl border border-primary-500/40 bg-primary-500/10 px-4 py-2 text-xs text-primary-100">
+                {aiFeedback}
+              </div>
+            )}
+            <div className="mt-4 rounded-3xl border border-white/10 bg-black/25 p-4">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-foreground/50">
+                <Sparkles className="h-4 w-4 text-primary-200" /> AI sharhi
+              </div>
+              {aiLoading && (
+                <div className="mt-3 space-y-2">
+                  <div className="h-3 animate-pulse rounded-full bg-white/10" />
+                  <div className="h-3 animate-pulse rounded-full bg-white/10" />
+                  <div className="h-3 w-3/4 animate-pulse rounded-full bg-white/10" />
+                </div>
+              )}
+              {!aiLoading && aiError && (
+                <p className="mt-3 text-sm text-danger">{aiError}</p>
+              )}
+              {!aiLoading && !aiError && summaryLines.length > 0 && (
+                <div className="mt-3 space-y-2 text-sm text-foreground/70">
+                  {summaryLines.map(item =>
+                    item.isHeading ? (
+                      <div key={item.id} className="pt-2 text-sm font-semibold text-foreground">
+                        {item.text}
+                      </div>
+                    ) : (
+                      <div key={item.id} className="flex gap-2">
+                        <span className="mt-[2px] text-foreground/40">•</span>
+                        <span>{item.text}</span>
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
+              {!aiLoading && !aiError && summaryLines.length === 0 && (
+                <p className="mt-3 text-sm text-foreground/60">
+                  AI sharhi hozircha mavjud emas. Plannerda asosiy bloklarni belgilang.
+                </p>
+              )}
+              {aiStats && (
+                <div className="mt-4 flex flex-wrap gap-2 text-xs text-foreground/70">
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                    Bajarildi: {aiStats.completed}
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                    Kutilmoqda: {aiStats.pending}
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                    O'tkazildi: {aiStats.skipped}
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                    Coin: {aiCoinDelta >= 0 ? `+${aiCoinDelta}` : aiCoinDelta}
+                  </span>
+                  {typeof aiStats.progress === "number" && (
+                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                      Progress: {Math.round((aiStats.progress ?? 0) * 100)}%
+                    </span>
+                  )}
+                  {typeof aiStats.habitsChecked === "number" && (
+                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                      Habitlar: {aiStats.habitsChecked}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               {coachModes.map(mode => {
@@ -462,7 +649,7 @@ const DashboardView = ({ onOpenPlanner }: DashboardViewProps) => {
                       "rounded-full border px-4 py-2 text-xs font-semibold transition",
                       active
                         ? "border-primary-400 bg-primary-500/20 text-primary-100"
-                        : "border-white/10 bg-black/20 text-white/60 hover:bg-white/10"
+                        : "border-white/10 bg-black/20 text-foreground/65 hover:bg-white/10"
                     )}
                   >
                     {mode.label}
@@ -471,13 +658,13 @@ const DashboardView = ({ onOpenPlanner }: DashboardViewProps) => {
               })}
             </div>
             {activeMode?.description && (
-              <p className="mt-2 text-xs text-white/40">{activeMode.description}</p>
+              <p className="mt-2 text-xs text-foreground/55">{activeMode.description}</p>
             )}
             <div className="mt-4 space-y-2">
               {coachReport.actions.map(action => (
                 <div
                   key={action}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white/70"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-foreground/75"
                 >
                   <span>{action}</span>
                   <button

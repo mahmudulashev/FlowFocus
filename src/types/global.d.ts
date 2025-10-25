@@ -13,6 +13,7 @@ export interface FocusFlowAPI {
   getState: () => Promise<unknown>;
   saveState: (state: unknown) => Promise<void>;
   toggleWidget: () => Promise<boolean>;
+  pinWidget?: (pinned: boolean) => Promise<void>;
   notify: (payload: { title: string; body: string }) => Promise<void>;
   generateSummary: () => Promise<FocusFlowSummary>;
   resetWeek: () => Promise<{ editsUsed: number; lastReset: string } | undefined>;

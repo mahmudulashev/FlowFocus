@@ -78,7 +78,8 @@ const pickData = (state: FocusState): FocusData => ({
   priorities: state.priorities,
   notificationsEnabled: state.notificationsEnabled,
   widgetPinned: state.widgetPinned,
-  lastHydratedAt: state.lastHydratedAt
+  lastHydratedAt: state.lastHydratedAt,
+  theme: state.theme
 });
 
 const ensureTaskReward = (task: FocusTask): FocusTask => {
@@ -140,7 +141,8 @@ const ensureDataSchema = (raw?: unknown): FocusData => {
     priorities: data.priorities || base.priorities,
     notificationsEnabled: data.notificationsEnabled ?? base.notificationsEnabled,
     widgetPinned: data.widgetPinned ?? base.widgetPinned,
-    lastHydratedAt: new Date().toISOString()
+    lastHydratedAt: new Date().toISOString(),
+    theme: data.theme ?? base.theme
   };
 };
 
@@ -183,6 +185,9 @@ export const useFocusStore = create<FocusState>()(
     hydrate: async () => {
       const raw = await readPersistedState();
       const schema = ensureDataSchema(raw);
+      if (typeof document !== "undefined") {
+        document.documentElement.dataset.theme = schema.theme ?? "ocean";
+      }
       set({
         ...schema,
         hydrated: true
@@ -500,11 +505,18 @@ export const useFocusStore = create<FocusState>()(
       await get().persist();
       return { success, reason };
     },
-    toggleWidgetPinned: value => {
+    toggleWidgetPinned: async value => {
       set(state => {
         state.widgetPinned = value;
       });
-      void get().persist();
+      if (typeof window !== "undefined" && window.focusFlowAPI?.pinWidget) {
+        try {
+          await window.focusFlowAPI.pinWidget(value);
+        } catch (error) {
+          console.error("[FocusFlow] toggleWidgetPinned error", error);
+        }
+      }
+      await get().persist();
     },
     addQuickNote: async note => {
       if (!note.trim()) return;
@@ -517,6 +529,15 @@ export const useFocusStore = create<FocusState>()(
       set(state => {
         state.quickNotes = state.quickNotes.filter(item => item !== note);
       });
+      await get().persist();
+    },
+    setTheme: async theme => {
+      set(state => {
+        state.theme = theme;
+      });
+      if (typeof document !== "undefined") {
+        document.documentElement.dataset.theme = theme;
+      }
       await get().persist();
     },
     addReward: async reward => {

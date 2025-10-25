@@ -1,3 +1,12 @@
+const withOpacityValue = variable => {
+  return ({ opacityValue }) => {
+    if (opacityValue === undefined) {
+      return `rgb(var(${variable}))`;
+    }
+    return `rgb(var(${variable}) / ${opacityValue})`;
+  };
+};
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./src/**/*.{ts,tsx,css,html}"],
@@ -5,26 +14,29 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          50: "#f2f7ff",
-          100: "#dbe8ff",
-          200: "#b7d0ff",
-          300: "#8aacff",
-          400: "#5c86ff",
-          500: "#3566ff",
-          600: "#1f4df0",
-          700: "#1439c8",
-          800: "#122f9c",
-          900: "#112a7a"
+          50: withOpacityValue("--color-primary-50"),
+          100: withOpacityValue("--color-primary-100"),
+          200: withOpacityValue("--color-primary-200"),
+          300: withOpacityValue("--color-primary-300"),
+          400: withOpacityValue("--color-primary-400"),
+          500: withOpacityValue("--color-primary-500"),
+          600: withOpacityValue("--color-primary-600"),
+          700: withOpacityValue("--color-primary-700"),
+          800: withOpacityValue("--color-primary-800"),
+          900: withOpacityValue("--color-primary-900")
         },
         surface: {
-          DEFAULT: "#12121a",
-          raised: "#191927",
-          subtle: "#1f2033"
+          DEFAULT: withOpacityValue("--color-surface-900"),
+          raised: withOpacityValue("--color-surface-800"),
+          subtle: withOpacityValue("--color-surface-700")
         },
-        accent: "#ffcf54",
-        success: "#4ade80",
-        warning: "#f97316",
-        danger: "#f43f5e"
+        accent: withOpacityValue("--color-accent"),
+        success: withOpacityValue("--color-success"),
+        warning: withOpacityValue("--color-warning"),
+        danger: withOpacityValue("--color-danger"),
+        foreground: withOpacityValue("--color-foreground"),
+        muted: withOpacityValue("--color-muted"),
+        background: withOpacityValue("--color-background")
       },
       fontFamily: {
         sans: ["'Inter'", "system-ui", "sans-serif"],

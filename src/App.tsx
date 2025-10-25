@@ -18,6 +18,7 @@ import CoinsView from "@/features/coins/CoinsView";
 import WidgetView from "@/features/dashboard/WidgetView";
 import LogoMark from "@/components/LogoMark";
 import { getTodayKey } from "@/utils/date";
+import type { ThemeId } from "@/state/types";
 
 const tabs = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -26,6 +27,37 @@ const tabs = [
   { id: "coins", label: "Coinlar", icon: Coins },
   { id: "settings", label: "Sozlamalar", icon: Settings2 }
 ] as const;
+
+const themeOptions: Array<{ id: ThemeId; label: string; description: string; swatch: [string, string]; glow: string }> = [
+  {
+    id: "ocean",
+    label: "Ocean Pulse",
+    description: "Ko'k gradientlar va sokin neon effektlar.",
+    swatch: ["#3566ff", "#38bdf8"],
+    glow: "from-primary-500/30 to-cyan-400/30"
+  },
+  {
+    id: "sunset",
+    label: "Sunset Flow",
+    description: "Issiq to'q sariq va pushti soyalar.",
+    swatch: ["#ff6b3c", "#ffbe6e"],
+    glow: "from-[#ff6b3c]/40 to-[#f59e0b]/30"
+  },
+  {
+    id: "aurora",
+    label: "Aurora Breeze",
+    description: "Sovuq moviy va binafsha chiziqlar.",
+    swatch: ["#3aa2ff", "#c084fc"],
+    glow: "from-[#22d3ee]/30 to-[#c084fc]/30"
+  },
+  {
+    id: "midnight",
+    label: "Midnight Drive",
+    description: "Kechki tun va to'q binafsha yorqinligi.",
+    swatch: ["#5c4bff", "#1f1861"],
+    glow: "from-[#5c4bff]/30 to-[#6366f1]/25"
+  }
+];
 
 const inferTabFromHash = (): (typeof tabs)[number]["id"] => {
   const hash = window.location.hash.replace("#/", "");
@@ -68,7 +100,7 @@ const AppShell = () => {
   }, [pendingLogs?.updatedAt]);
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#05050a] text-white lg:h-screen lg:flex-row">
+    <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-background text-foreground md:h-screen md:flex-row">
       <div className="pointer-events-none absolute inset-0 blur-3xl" aria-hidden>
         <div className="absolute left-[-10%] top-[-20%] h-96 w-96 rounded-full bg-primary-500/20" />
         <div className="absolute right-[-15%] top-1/4 h-[420px] w-[420px] rounded-full bg-[#ff6b6b]/20" />
@@ -77,14 +109,14 @@ const AppShell = () => {
 
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 transform flex-col border-r border-white/10 bg-surface/95 backdrop-blur-xl transition-transform duration-300 ease-in-out lg:relative lg:z-10 lg:w-72 lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 transform flex-col border-r border-white/10 bg-surface/95 backdrop-blur-xl transition-transform duration-300 ease-in-out md:relative md:z-10 md:w-72 md:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
         <div className="flex items-center justify-between gap-3 px-6 py-8">
@@ -99,7 +131,7 @@ const AppShell = () => {
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="rounded-2xl border border-white/10 bg-white/5 p-2 text-white transition hover:bg-white/10 lg:hidden"
+            className="rounded-2xl border border-white/10 bg-white/5 p-2 text-white transition hover:bg-white/10 md:hidden"
             aria-label="Menuni yopish"
           >
             <X className="h-5 w-5" />
@@ -173,7 +205,7 @@ const AppShell = () => {
             setSidebarOpen(prev => !prev);
           }}
         />
-        <section className="flex-1 overflow-y-auto px-4 pb-10 pt-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 sm:px-6 lg:px-8 lg:pt-6">
+        <section className="flex-1 overflow-y-auto px-4 pb-10 pt-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 sm:px-6 md:px-8 md:pt-6">
           {activeTab === "dashboard" && <DashboardView onOpenPlanner={() => handleTabChange("planner")} />}
           {activeTab === "planner" && <PlannerView editsLeft={editsLeft} />}
           {activeTab === "habits" && <HabitsView isEvening={isEvening} />}
@@ -213,12 +245,12 @@ const HeaderSection = ({
   );
 
   return (
-    <header className="flex flex-col gap-4 border-b border-white/10 px-4 py-4 backdrop-blur-xl sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:py-5">
-      <div className="flex w-full items-start justify-between gap-4 lg:items-center">
-        <div className="flex items-start gap-3 lg:items-center">
+    <header className="flex flex-col gap-4 border-b border-white/10 px-4 py-4 backdrop-blur-xl sm:px-6 md:flex-row md:items-center md:justify-between md:px-8 md:py-5">
+      <div className="flex w-full items-start justify-between gap-4 md:items-center">
+        <div className="flex items-start gap-3 md:items-center">
           <button
             onClick={onToggleMenu}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white transition hover:bg-white/20 lg:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white transition hover:bg-white/20 md:hidden"
             aria-label="Menuni ochish"
           >
             <Menu className="h-5 w-5" />
@@ -236,7 +268,7 @@ const HeaderSection = ({
           </div>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+      <div className="flex flex-wrap items-center gap-3 md:justify-end">
         <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-right text-sm">
           <div className="text-xs text-white/50">Haftalik tahrir limiti</div>
           <div className="text-base font-semibold text-white">
@@ -257,6 +289,8 @@ const HeaderSection = ({
 };
 
 const SettingsView = () => {
+  const theme = useFocusStore(state => state.theme);
+  const setTheme = useFocusStore(state => state.setTheme);
   const notificationsEnabled = useFocusStore(state => state.notificationsEnabled);
   const toggleNotification = useFocusStore(state => state.toggleNotification);
   const widgetPinned = useFocusStore(state => state.widgetPinned);
@@ -266,9 +300,26 @@ const SettingsView = () => {
   const hasWidgetSupport =
     typeof window !== "undefined" && Boolean(window.focusFlowAPI?.toggleWidget);
   const [notificationFeedback, setNotificationFeedback] = useState<string | null>(null);
+  const [themeMessage, setThemeMessage] = useState<string | null>(null);
+  const [themeLoading, setThemeLoading] = useState<ThemeId | null>(null);
   const [resetFeedback, setResetFeedback] = useState<string | null>(null);
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
+
+  const handleThemeSelect = async (nextTheme: ThemeId) => {
+    if (nextTheme === theme) {
+      setThemeMessage("Tanlangan tema allaqachon qo'llanilmoqda.");
+      return;
+    }
+    setThemeMessage(null);
+    setThemeLoading(nextTheme);
+    await setTheme(nextTheme);
+    setThemeLoading(null);
+    const selected = themeOptions.find(option => option.id === nextTheme);
+    if (selected) {
+      setThemeMessage(`${selected.label} temasi faollashtirildi.`);
+    }
+  };
 
   const handleNotificationToggle = async (checked: boolean) => {
     setNotificationFeedback(null);
@@ -300,21 +351,78 @@ const SettingsView = () => {
   return (
     <div className="space-y-6">
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+        <h2 className="text-lg font-semibold">Rangli temalar</h2>
+        <p className="mt-1 text-sm text-foreground/70">Kayfiyatga mos palitrani tanlang.</p>
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+          {themeOptions.map(option => {
+            const active = option.id === theme;
+            return (
+              <button
+                key={option.id}
+                onClick={() => {
+                  void handleThemeSelect(option.id);
+                }}
+                disabled={themeLoading !== null && themeLoading !== option.id}
+                className={`group relative overflow-hidden rounded-3xl border px-1 py-1 text-left transition focus:outline-none focus:ring-2 focus:ring-primary-400/40 ${
+                  active
+                    ? "border-primary-400/80 bg-primary-500/10"
+                    : "border-white/10 bg-black/20 hover:border-primary-400/50 hover:bg-white/10"
+                } ${themeLoading === option.id ? "opacity-80" : ""}`}
+                aria-pressed={active}
+              >
+                <div className="relative rounded-[26px] border border-white/10 bg-surface/80 p-4 backdrop-blur">
+                  <div
+                    className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${option.glow} opacity-0 transition group-hover:opacity-90 ${
+                      active ? "opacity-90" : ""
+                    }`}
+                  />
+                  <div className="relative z-10 flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">{option.label}</div>
+                      <p className="mt-1 text-xs text-foreground/70">{option.description}</p>
+                    </div>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/30">
+                      <div
+                        className="h-8 w-8 rounded-full border border-white/10 shadow-inner"
+                        style={{
+                          backgroundImage: `linear-gradient(135deg, ${option.swatch[0]}, ${option.swatch[1]})`
+                        }}
+                      />
+                    </div>
+                  </div>
+                  {active && (
+                    <span className="relative mt-4 inline-flex items-center rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground/80">
+                      Aktiv
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        {themeMessage && (
+          <div className="mt-4 rounded-2xl border border-primary-500/40 bg-primary-500/10 px-4 py-3 text-xs text-primary-100">
+            {themeMessage}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
         <h2 className="text-lg font-semibold">Bildirishnomalar</h2>
-        <p className="mt-1 text-sm text-white/60">
+        <p className="mt-1 text-sm text-foreground/70">
           Vazifa boshlanishidan 5 daqiqa oldin eslatma olasiz.
         </p>
         <div className="mt-4 flex items-center justify-between rounded-2xl bg-black/30 p-4">
           <div>
             <div className="text-sm font-semibold">Bildirishnomani {notificationsEnabled ? "o'chirish" : "yoqish"}</div>
-            <p className="text-xs text-white/50">
+            <p className="text-xs text-foreground/60">
               {notificationsEnabled
                 ? "AI coach sizga zarur paytda push yuborib turadi."
                 : "Bildirishnomalar hozircha o'chirilgan."}
             </p>
           </div>
           <label className="inline-flex cursor-pointer items-center gap-3">
-            <span className="text-sm text-white/50">{notificationsEnabled ? "On" : "Off"}</span>
+            <span className="text-sm text-foreground/60">{notificationsEnabled ? "On" : "Off"}</span>
             <input
               type="checkbox"
               checked={notificationsEnabled}
@@ -327,7 +435,7 @@ const SettingsView = () => {
           </label>
         </div>
         {notificationFeedback && (
-          <div className="mt-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-xs text-white/60">
+          <div className="mt-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-xs text-foreground/65">
             {notificationFeedback}
           </div>
         )}
@@ -339,12 +447,12 @@ const SettingsView = () => {
           <div className="mt-4 flex items-center justify-between rounded-2xl bg-black/30 p-4">
             <div>
               <div className="text-sm font-semibold">Doimo ustida turishi</div>
-              <p className="text-xs text-white/50">
+              <p className="text-xs text-foreground/60">
                 Widget ekranda boshqa oynalar ustida turishi uchun.
               </p>
             </div>
             <label className="inline-flex cursor-pointer items-center gap-3">
-              <span className="text-sm text-white/50">{widgetPinned ? "Pinned" : "Free"}</span>
+              <span className="text-sm text-foreground/60">{widgetPinned ? "Pinned" : "Free"}</span>
               <input
                 type="checkbox"
                 checked={widgetPinned}
@@ -358,7 +466,7 @@ const SettingsView = () => {
 
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
         <h2 className="text-lg font-semibold">Haftalik reset</h2>
-        <p className="mt-1 text-sm text-white/60">
+        <p className="mt-1 text-sm text-foreground/70">
           Agar yangi haftaga o'tgan bo'lsangiz limitni yangilash uchun reset qiling.
         </p>
         <button
